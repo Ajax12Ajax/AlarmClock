@@ -16,8 +16,8 @@ unsigned int punkty = 0;
 int sec = second();
 int min = minute();
 int h = hour();
-boolean gameStarts = false;
-boolean clockStarts = true;
+boolean gameStarted = false;
+boolean clockStarted = true;
 
 int czujnik = A1; // pin analogowy A1 połączony z sygnałem z czujnika
 float VOLT;
@@ -46,10 +46,9 @@ void setup()
 
 void loop()
 {
-
-    if (gameStarts)
+    if (gameStarted)
         game();
-    else if (clockStarts)
+    else if (clockStarted)
         clock();
 }
 
@@ -116,7 +115,7 @@ void clock()
     }
 
     if (sensorVal1 == LOW)
-        gameStarts = true;
+        gameStarted = true;
 
     if (sensorVal3 == LOW)
         tone(A0, 20);
@@ -144,7 +143,6 @@ void game()
 
             if (ok == 1)
                 krok2--;
-            
         }
 
         czas[3] = millis(); // Pobierz liczbe milisekund od startu programu
@@ -227,7 +225,7 @@ void game()
                 lcd.setCursor(15, wys);
                 lcd.print("<");
             }
-        
+
             if ((krok == krok2) && (wys2 == 0))
             {
                 krok = 0;
@@ -254,9 +252,9 @@ void game()
     }
     else
     {
-        if (clockStarts)
+        if (clockStarted)
         {
-            clockStarts = false;
+            clockStarted = false;
             lcd.clear();
             lcd.setCursor(3, 0);
             lcd.print("GAME");
@@ -270,8 +268,8 @@ void game()
 
         if (sensorVal1 == LOW)
         {
-            clockStarts = true;
-            gameStarts = true;
+            clockStarted = true;
+            gameStarted = true;
             punkty = 0;
             zycia = 3;
             krok = 0;
@@ -291,8 +289,8 @@ void game()
             krok = 0;
             krok3 = 0;
             krok2 = 15;
-            clockStarts = true;
-            gameStarts = false;
+            clockStarted = true;
+            gameStarted = false;
             lcd.begin();
             lcd.backlight();
             lcd.clear();
