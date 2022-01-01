@@ -13,16 +13,15 @@ unsigned int ok = 0;
 unsigned int krok3 = 0;
 unsigned int zycia = 3;
 unsigned int punkty = 0;
-
-int czujnik = A1; // pin analogowy A1 połączony z sygnałem z czujnika
-float VOLT;
-float TEMP;
-
 int sec = second();
 int min = minute();
 int h = hour();
 boolean gameStarts = false;
 boolean clockStarts = true;
+
+int czujnik = A1; // pin analogowy A1 połączony z sygnałem z czujnika
+float VOLT;
+float TEMP;
 
 time_t prevDisplay;
 
