@@ -17,6 +17,7 @@ void spaceWarriorGame()
 
     if (zycia > 0)
     {
+        clockStarted = false;
         czas[0] = millis(); // Pobierz liczbe milisekund od startu programu
         czas[1] = czas[0] - czas[2];
 
@@ -89,12 +90,13 @@ void spaceWarriorGame()
         {
             zycia--;
             krok3 = 0;
+            clockStarted = true;
         }
-
         if (krok == 16)
         {
             zycia--;
             krok = 0;
+            clockStarted = true;
         }
         if (ok == 1)
         {
@@ -168,6 +170,7 @@ void spaceWarriorGame()
         }
         if (sensorVal2 == LOW || sensorVal3 == LOW)
         {
+            czas[] = new int[18];
             punkty = 0;
             zycia = 3;
             krok = 0;
