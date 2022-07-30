@@ -2,7 +2,7 @@ unsigned long time[18];
 unsigned int points = 0;
 unsigned int jump = 0;
 unsigned int high = 1;
-unsigned int op[6] = 15;
+unsigned int op = 15;
 boolean endGame = false;
 
 void jumpGame()
@@ -21,11 +21,9 @@ void jumpGame()
             // Zapamietaj aktualny time
             time[2] = time[0];
             points++;
-            jump++;
-            if (jump >= 3)
+            if (high == 0)
             {
-                jump = 0;
-                high = 1;
+                jump++;
             }
             if (op == 0)
                 op = 15;
@@ -62,22 +60,24 @@ void jumpGame()
         {
             // Zapamietaj aktualny time
             time[7] = time[10];
+            if (jump >= 5)
+            {
+                jump = 0;
+                high = 1;
+            }
             lcd.clear();
             lcd.setCursor(4, high);
             lcd.print("/");
-            for (i = 0; i <= 5; i++)
-            {
-                lcd.setCursor(op[i], 1);
-                lcd.print("|");
-            }
+            lcd.setCursor(op, 1);
+            lcd.print("|");
         }
         if (sensorVal1 == LOW && high == 1)
         {
             high = 0;
         }
 
-        endGame = op == 4 && high == 1;
-        clockStarted = op == 4 && high == 1;
+        endGame = (op == 4 && high == 1);
+        clockStarted = (op == 4 && high == 1);
     }
     else
     {
