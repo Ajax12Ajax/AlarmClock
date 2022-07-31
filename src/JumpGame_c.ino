@@ -1,9 +1,10 @@
-unsigned long time[18];
-unsigned int points = 0;
-unsigned int jump = 0;
-unsigned int high = 1;
-unsigned int op = 15;
+long time[18];
+int points = 0;
+int jump = 0;
+int high = 1;
+int op[3] = {15, 15, 15};
 boolean endGame = false;
+int opp = 0;
 
 void jumpGame()
 {
@@ -25,32 +26,42 @@ void jumpGame()
             {
                 jump++;
             }
-            if (op == 0)
-                op = 15;
-            op--;
+            if (op[0] == 0)
+            {
+                op[0] = 15;
+                opp++;
+            }
+            op[0]--;
 
-            Serial.println(points);
-            Serial.println(op);
-            Serial.println(high);
             clockStarted = true;
         }
         clockStarted = false;
         time[3] = millis(); // Pobierz liczbe milisekund od startu programu
         time[4] = time[3] - time[5];
 
-        if (time[4] >= 450)
+        if (time[4] >= 250)
         {
             // Zapamietaj aktualny time
             time[5] = time[3];
+
+            if (op[1] == 0)
+                op[1] = 15;
+            if (opp >= 1)
+                op[1]--;
         }
 
         time[11] = millis(); // Pobierz liczbe milisekund od startu programu
         time[12] = time[11] - time[6];
 
-        if (time[12] >= 550)
+        if (time[12] >= 600)
         {
             // Zapamietaj aktualny time
             time[6] = time[11];
+
+            if (op[2] == 0)
+                op[2] = 15;
+            if (opp >= 2)
+                op[2]--;
         }
 
         time[10] = millis(); // Pobierz liczbe milisekund od startu programu
@@ -68,16 +79,39 @@ void jumpGame()
             lcd.clear();
             lcd.setCursor(4, high);
             lcd.print("/");
-            lcd.setCursor(op, 1);
+            lcd.setCursor(op[0], 1);
             lcd.print("|");
+            if (opp >= 1)
+            {
+                lcd.setCursor(op[1], 1);
+                lcd.print("|");
+            }
+            if (opp >= 2)
+            {
+                lcd.setCursor(op[2], 1);
+                lcd.print("|");
+                opp = 2;
+            }
         }
-        if (sensorVal1 == LOW && high == 1)
+        if (sensorVal2 == LOW && high == 1)
         {
             high = 0;
         }
 
-        endGame = (op == 4 && high == 1);
-        clockStarted = (op == 4 && high == 1);
+        for (int i = 0; i <= 2; i++)
+        {
+            if (op[i] == 4 && high == 1)
+            {
+                endGame = true;
+                clockStarted = true;
+                i = 3;
+            }
+            else
+            {
+                endGame = false;
+                clockStarted = false;
+            }
+        }
     }
     else
     {
@@ -103,12 +137,19 @@ void jumpGame()
             points = 0;
             jump = 0;
             high = 1;
-            op = 15;
+            opp = 0;
+            for (int i = 0; i <= 2; i++)
+            {
+                op[i] = 15;
+            }
             lcd.clear();
             lcd.setCursor(4, high);
             lcd.print("/");
-            lcd.setCursor(op, 1);
-            lcd.print("|");
+            for (int i = 0; i <= 2; i++)
+            {
+                lcd.setCursor(op[i], 1);
+                lcd.print("|");
+            }
             delay(800);
         }
         if (sensorVal2 == LOW || sensorVal3 == LOW)
@@ -116,7 +157,11 @@ void jumpGame()
             points = 0;
             jump = 0;
             high = 1;
-            op = 15;
+            opp = 0;
+            for (int i = 0; i <= 2; i++)
+            {
+                op[i] = 15;
+            }
             endGame = false;
             clockStarted = true;
             jumpStarted = false;

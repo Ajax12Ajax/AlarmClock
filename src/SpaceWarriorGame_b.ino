@@ -170,7 +170,6 @@ void spaceWarriorGame()
         }
         if (sensorVal2 == LOW || sensorVal3 == LOW)
         {
-            czas[] = new int[18];
             punkty = 0;
             zycia = 3;
             krok = 0;
