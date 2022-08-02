@@ -2,5 +2,5 @@
     "board": "arduino:avr:uno",
     "programmer": "arduino:avrispmkii",
     "port": "COM3",
-    "sketch": "src/AlarmClock_a.ino"
+    "sketch": "src\\AlarmClock.ino"
 }
