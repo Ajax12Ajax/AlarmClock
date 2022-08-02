@@ -1,2 +1,3 @@
 # AlarmClock
-Arduino
+Arduino Alarm Clock
+By Ajax12Ajax
