@@ -112,6 +112,7 @@ void clock()
 
 boolean endGame = false;
 long time[4];
+long timer[3];
 int points = 0;
 int position[3];
 int lives = 3;
@@ -138,14 +139,16 @@ void game()
                     position[1]--;
             }
 
-            if (millis() - time[1] >= 450)
+            if (millis() - time[1] >= timer[1])
             {
+                timer[1] = random(100, 450);
                 time[1] = millis();
                 position[0]++;
             }
 
-            if (millis() - time[2] >= 550)
+            if (millis() - time[2] >= timer[2])
             {
+                timer[2] = random(100, 450);
                 time[2] = millis();
                 position[2]++;
             }
@@ -226,8 +229,9 @@ void game()
 
         if (jumpStarted)
         {
-            if (millis() - time[0] >= 400)
+            if (millis() - time[0] >= timer[0])
             {
+                timer[0] = random(350, 580);
                 time[0] = millis();
                 points++;
                 if (high[0] == 0)
@@ -240,8 +244,9 @@ void game()
                 position[0]--;
             }
 
-            if (millis() - time[1] >= 250)
+            if (millis() - time[1] >= timer[1])
             {
+                timer[1] = random(250, 500);
                 time[1] = millis();
                 if (position[1] == 0)
                     position[1] = 15;
@@ -249,8 +254,9 @@ void game()
                     position[1]--;
             }
 
-            if (millis() - time[2] >= 600)
+            if (millis() - time[2] >= timer[2])
             {
+                timer[2] = random(380, 600);
                 time[2] = millis();
                 if (position[2] == 0)
                     position[2] = 15;
@@ -314,7 +320,10 @@ void game()
             lcd.setCursor(13, 1);
             lcd.print(points);
             for (int i = 0; i <= 2; i++)
+            {
                 position[i] = 0;
+                timer[i] = 0;
+            }
             points = 0;
             lives = 3;
             op = 0;
