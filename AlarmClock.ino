@@ -60,7 +60,7 @@ boolean settings = false;
 long last;
 int alarmData[6][2];
 boolean days[6][7];
-int now;
+int now = 0;
 
 void clock()
 {
@@ -73,13 +73,13 @@ void clock()
     DateTime now = rtc.now();
     // Serial.println(now.tostr(buf));
     lcd.setCursor(0, 0);
-    format(now.hour());
+    lcd.print(format(now.hour()));
 
     lcd.setCursor(3, 0);
-    format(now.minute());
+    lcd.print(format(now.minute()));
 
     lcd.setCursor(6, 0);
-    format(now.second());
+    lcd.print(format(now.second()));
 
     temp = (analogRead(sensor) * 5.0) / 1024.0 * 100.0;
     lcd.setCursor(12, 0);
@@ -92,6 +92,7 @@ void clock()
     {
       if (!clickBacklight)
       {
+        last = millis();
         if (backlight)
         {
           lcd.noBacklight();
@@ -105,7 +106,7 @@ void clock()
       }
       clickBacklight = true;
     }
-    else if (last >= 300)
+    else if ((millis() - last) >= 300)
     {
       settings = true;
     }
@@ -120,15 +121,23 @@ void clock()
   }
   else
   {
+    if (now 0)
+    {
+    }
+    else
+    {
+    }
   }
 }
 
-void format(int i)
+String format(int i)
 {
+  String s;
   if (i < 10)
-    lcd.print((String) "0" + i);
+    s = "0" + i;
   else
-    lcd.print(i);
+    s = i;
+  return s;
 }
 
 boolean endGame = false;
