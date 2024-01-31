@@ -28,7 +28,7 @@ void setup()
   lcd.noBlink();
   lcd.noCursor();
   rtc.begin();
-  // rtc.adjust(DateTime(__DATE__, __TIME__));
+  //rtc.adjust(DateTime(__DATE__, __TIME__));
   clockSetup();
 }
 
@@ -47,7 +47,7 @@ void clockSetup()
   lcd.print("00:00:00");
 
   temp = (analogRead(sensor) * 5.0) / 1024.0 * 100.0;
-  Serial.println((String) "Temperatura (C): " + temp);
+  //Serial.println((String) "Temperatura (C): " + temp);
   lcd.setCursor(12, 0);
   lcd.print(temp);
   lcd.setCursor(14, 0);
@@ -60,7 +60,7 @@ boolean settings = false;
 long last;
 int alarmData[6][2];
 boolean days[6][7];
-int now = 0;
+int now = -1;
 
 void clock()
 {
@@ -71,7 +71,7 @@ void clock()
   if (!settings)
   {
     DateTime now = rtc.now();
-    // Serial.println(now.tostr(buf));
+    //Serial.println(now.tostr(buf));
     lcd.setCursor(0, 0);
     lcd.print(format(now.hour()));
 
@@ -93,22 +93,27 @@ void clock()
       if (!clickBacklight)
       {
         last = millis();
-        if (backlight)
-        {
-          lcd.noBacklight();
-          backlight = false;
-        }
-        else
-        {
-          lcd.backlight();
-          backlight = true;
-        }
       }
       clickBacklight = true;
     }
-    else if ((millis() - last) >= 300)
+    else if ((millis() - last) >= 2000 && clickBacklight)
     {
+      lcd.clear();
       settings = true;
+    }
+    else if (clickBacklight)
+    {
+      if (backlight)
+      {
+        lcd.noBacklight();
+        backlight = false;
+      }
+      else
+      {
+        lcd.backlight();
+        backlight = true;
+      }
+      clickBacklight = false;
     }
     else
     {
@@ -121,8 +126,10 @@ void clock()
   }
   else
   {
-    if (now 0)
+    if (now < 0)
     {
+      lcd.setCursor(0, 0);
+      lcd.print("00:00:00");
     }
     else
     {
@@ -133,7 +140,7 @@ void clock()
 String format(int i)
 {
   String s;
-  if (i < 10)
+  if (i < 10 && i >= 0)
     s = "0" + i;
   else
     s = i;
