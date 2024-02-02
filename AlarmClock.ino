@@ -17,6 +17,7 @@ DS1302 rtc;
 
 void setup()
 {
+  lcd.init();
   Serial.begin(9600);
   pinMode(8, INPUT_PULLUP);
   pinMode(9, INPUT_PULLUP);
@@ -29,7 +30,6 @@ void setup()
   lcd.noCursor();
   rtc.begin();
   //rtc.adjust(DateTime(__DATE__, __TIME__));
-  clockSetup();
 }
 
 void loop()
@@ -38,20 +38,6 @@ void loop()
     clock();
   if (spaceWarriorStarted || jumpStarted)
     game();
-}
-
-void clockSetup()
-{
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("00:00:00");
-
-  temp = (analogRead(sensor) * 5.0) / 1024.0 * 100.0;
-  //Serial.println((String) "Temperatura (C): " + temp);
-  lcd.setCursor(12, 0);
-  lcd.print(temp);
-  lcd.setCursor(14, 0);
-  lcd.print((String) char(223) + "C");
 }
 
 char buf[20];
@@ -70,10 +56,16 @@ void clock()
 
   if (!settings)
   {
+    lcd.init();
+    lcd.setCursor(0, 0);
+    lcd.print("00:00:00");
+    lcd.setCursor(14, 0);
+    lcd.print((String) char(223) + "C");
     DateTime now = rtc.now();
     //Serial.println(now.tostr(buf));
     lcd.setCursor(0, 0);
     lcd.print(format(now.hour()));
+    Serial.println(format(now.hour()));
 
     lcd.setCursor(3, 0);
     lcd.print(format(now.minute()));
@@ -406,7 +398,6 @@ void game()
       lcd.clear();
       lcd.noBlink();
       lcd.noCursor();
-      clockSetup();
       // h = 0;
       // min = 0;
       // sec = 0;
