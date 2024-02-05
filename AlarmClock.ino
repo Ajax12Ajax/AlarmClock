@@ -81,7 +81,7 @@ void setup()
   lcd.print((String) char(223) + "C");
   rtc.begin();
   load();
-  // rtc.adjust(DateTime(__DATE__, __TIME__));
+  //rtc.adjust(DateTime(__DATE__, __TIME__));
 }
 
 void loop()
@@ -111,6 +111,7 @@ void loop()
     game();
 }
 
+bool alarm = false;
 bool settings = false;
 bool selected = false;
 bool chosenTime = false;
@@ -121,9 +122,22 @@ int amt = 0;
 int nowV = 0;
 int nowH = 0;
 
+int zellersCongruence(int day, int month, int year)
+{
+  if (month < 3)
+  {
+    month += 12;
+    year -= 1;
+  }
+  int K = year % 100;
+  int J = year / 100;
+  int h = (day + (13 * (month + 1)) / 5 + K + K / 4 + J / 4 - 2 * J) % 7;
+  return (h + 5) % 7;
+}
+
 void clock()
 {
-  if (!settings)
+  if (!settings && !alarm)
   {
     DateTime now = rtc.now();
     if (lastSec != now.second())
@@ -149,14 +163,42 @@ void clock()
       lcd.print((String)now.day() + "/" + now.month() + "/" + now.year());
     }
 
-    //for (int i = 0; amt > i; i++)
-    //{
-    //  if ()
-    //  {
-    //  }
-    //  tone(buzzer, 400, 400);
-    //  delay(500);
-    //}
+    for (int i = 0; amt > i; i++)
+    {
+      bool today = false;
+      Serial.println("--------------");
+      Serial.println(i);
+      Serial.print("day: ");
+      Serial.println(zellersCongruence(now.day(), now.month(), now.year()));
+      if (alarmDays[i][zellersCongruence(now.day(), now.month(), now.year())])
+      {
+        today = true;
+        Serial.println("pland");
+      }
+      else
+      {
+        today = true;
+        for (int t = 0; 7 > t; t++)
+        {
+          if (alarmDays[i][t])
+          {
+            today = false;
+          }
+        }
+      }
+      Serial.print("today: ");
+      Serial.println(today);
+      Serial.print("Time: ");
+      Serial.print(alarmTime[i][0]);
+      Serial.print(":");
+      Serial.println(alarmTime[i][1]);
+      if (today && alarmTime[i][0] == now.hour() && alarmTime[i][1] == now.minute())
+      {
+        Serial.println("Ring!!!!!");
+        tone(buzzer, 400, 400);
+        delay(500);
+      }
+    }
 
     if (selectClick)
     {
@@ -194,8 +236,9 @@ void clock()
     if (leftClick)
       spaceWarriorStarted = true;
   }
-  else
+  else if (settings)
   {
+    alarm = false;
     if (!selected)
     {
       if (delayed)
@@ -468,6 +511,8 @@ void clock()
         }
       }
     }
+  } else if (alarm) {
+
   }
   delay(10);
 }
