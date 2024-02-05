@@ -2,6 +2,9 @@
 #include <LiquidCrystal_I2C.h>
 #include <RTClib.h>
 
+#define BUFSIZE DS1302_RAMSIZE
+char bufTime[20];
+
 #if defined(ARDUINO) && ARDUINO >= 100
 #define printByte(args) write(args);
 #else
@@ -11,35 +14,52 @@
 uint8_t arrowBold[8] = {0x4, 0xe, 0x1f, 0x1b, 0x11, 0x0, 0x0};
 uint8_t arrowUp[8] = {0x0, 0x0, 0x4, 0xa, 0x11, 0x0, 0x0};
 uint8_t arrowDown[8] = {0x0, 0x0, 0x11, 0xa, 0x4, 0x0, 0x0};
+uint8_t arrowLeft[8] = {0x0, 0x2, 0x4, 0x8, 0x4, 0x2, 0x0};
+uint8_t arrowRight[8] = {0x0, 0x8, 0x4, 0x2, 0x4, 0x8, 0x0};
 
-boolean spaceWarriorStarted = false;
-boolean jumpStarted = false;
-boolean clockStarted = true;
+bool spaceWarriorStarted = false;
+bool jumpStarted = false;
+bool clockStarted = true;
 
 int sensor = A3;
 int temp;
 
-boolean backlight = true;
+int buzzer = 2;
+
+bool backlight = true;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 DS1302 rtc;
 
-boolean selectClick = false;
-boolean leftClick = false;
-boolean rightClick = false;
-boolean clickable = true;
-boolean clickedS = false;
-boolean clickedL = false;
-boolean clickedR = false;
+String adapt(int i)
+{
+  String s;
+  if (i < 10 && i >= 0)
+    s = "0" + String(i);
+  else
+    s = String(i);
+  return s;
+}
 
-long lastS;
+bool selectClick = false;
+bool leftClick = false;
+bool rightClick = false;
+bool clickable = true;
+bool clickedS = false;
+bool clickedL = false;
+bool clickedR = false;
+
 long delayL = 0;
-boolean delayed = true;
+bool delayed = true;
+
+float alarmTime[6][4];
+bool alarmDays[6][8];
 
 void setup()
 {
   lcd.init();
-  Serial.begin(9600);
+  Serial.begin(115200);
+  pinMode(buzzer, OUTPUT);
   pinMode(8, INPUT_PULLUP);
   pinMode(9, INPUT_PULLUP);
   pinMode(10, INPUT_PULLUP);
@@ -50,6 +70,8 @@ void setup()
   lcd.createChar(0, arrowBold);
   lcd.createChar(1, arrowUp);
   lcd.createChar(2, arrowDown);
+  lcd.createChar(3, arrowLeft);
+  lcd.createChar(4, arrowRight);
   lcd.home();
   lcd.noBlink();
   lcd.noCursor();
@@ -58,6 +80,7 @@ void setup()
   lcd.setCursor(14, 0);
   lcd.print((String) char(223) + "C");
   rtc.begin();
+  load();
   // rtc.adjust(DateTime(__DATE__, __TIME__));
 }
 
@@ -88,17 +111,14 @@ void loop()
     game();
 }
 
-char buf[20];
-
-boolean settings = false;
+bool settings = false;
+bool selected = false;
+bool chosenTime = false;
+bool chosenDate = false;
+long lastSec;
 long last;
-int alarmTime[6][2];
-boolean alarmDays[6][7];
-int nowV = -1;
-boolean selected = false;
-boolean chosenTime = false;
-boolean chosenDate = false;
-
+int amt = 0;
+int nowV = 0;
 int nowH = 0;
 
 void clock()
@@ -106,21 +126,20 @@ void clock()
   if (!settings)
   {
     DateTime now = rtc.now();
-    if (lastS != now.second())
+    if (lastSec != now.second())
     {
       if (delayed)
         clickable = true;
-
-      lastS = now.second();
-      // Serial.println(now.tostr(buf));
+      lastSec = now.second();
+      // Serial.println(now.tostr(bufTime));
       lcd.setCursor(0, 0);
-      lcd.print(fortt(now.hour()));
+      lcd.print(adapt(now.hour()));
 
       lcd.setCursor(3, 0);
-      lcd.print(fortt(now.minute()));
+      lcd.print(adapt(now.minute()));
 
       lcd.setCursor(6, 0);
-      lcd.print(fortt(now.second()));
+      lcd.print(adapt(now.second()));
 
       temp = (analogRead(sensor) * 5.0) / 1024.0 * 100.0;
       lcd.setCursor(12, 0);
@@ -130,12 +149,19 @@ void clock()
       lcd.print((String)now.day() + "/" + now.month() + "/" + now.year());
     }
 
+    //for (int i = 0; amt > i; i++)
+    //{
+    //  if ()
+    //  {
+    //  }
+    //  tone(buzzer, 400, 400);
+    //  delay(500);
+    //}
+
     if (selectClick)
     {
       if (!clickedS)
-      {
         last = millis();
-      }
       clickedS = true;
     }
     else if ((millis() - last) >= 2000 && clickedS)
@@ -144,7 +170,7 @@ void clock()
       settings = true;
       clickedS = false;
       clickable = false;
-      delayL = (millis() + 2000);
+      delayL = (millis() + 1000);
       delayed = false;
     }
     else if (clickedS)
@@ -161,12 +187,10 @@ void clock()
       }
       clickedS = false;
     }
-    else
-    {
-      clickedS = false;
-    }
+
     if (rightClick)
       jumpStarted = true;
+
     if (leftClick)
       spaceWarriorStarted = true;
   }
@@ -174,94 +198,144 @@ void clock()
   {
     if (!selected)
     {
+      if (delayed)
+        clickable = true;
+
       lcd.setCursor(15, 0);
       lcd.printByte(1);
       lcd.setCursor(15, 1);
       lcd.printByte(2);
-      if (nowV < 0)
-      {
-        lcd.setCursor(0, 0);
-        lcd.print("new+");
-        if (delayed)
-          clickable = true;
-        if (selectClick)
-          clickedS = true;
-        else if (clickedS)
+
+      for (int i = 0; 1 >= i; i++)
+        if (amt > nowV + i)
         {
-          lcd.clear();
-          selected = true;
-          clickedS = false;
+          if (i == 0)
+          {
+            lcd.setCursor(14, 0);
+            lcd.print("<");
+          }
+          lcd.setCursor(0, i);
+          lcd.print(adapt(alarmTime[nowV + i][0]) + ":" + adapt(alarmTime[nowV + i][1]) + " " +
+                    adaptDays(nowV + i, 0) + adaptDays(nowV + i, 1) + adaptDays(nowV + i, 2) + adaptDays(nowV + i, 3) + adaptDays(nowV + i, 4) + adaptDays(nowV + i, 5) + adaptDays(nowV + i, 6));
         }
-      }
-      else
+        else if (amt == nowV + i && amt < 6)
+        {
+          if (i == 0)
+          {
+            lcd.setCursor(5, 0);
+            lcd.print("<");
+          }
+          lcd.setCursor(0, i);
+          lcd.print("new+");
+        }
+
+      if (selectClick)
       {
+        if (!clickedS)
+          last = millis();
+        clickedS = true;
+      }
+      else if ((millis() - last) >= 2000 && clickedS)
+      {
+        lcd.clear();
         lcd.setCursor(0, 0);
-        lcd.print(fortt(alarmTime[nowV][0]) + ":" + fortt(alarmTime[nowV][1]));
+        lcd.print("00:00:00");
+        lcd.setCursor(14, 0);
+        lcd.print((String) char(223) + "C");
+        nowV = 0;
+        settings = false;
+        clickedS = false;
+        clickable = false;
+        delayL = (millis() + 1000);
+        delayed = false;
+      }
+      else if (clickedS)
+      {
+        if (amt <= nowV)
+        {
+          amt++;
+          save();
+        }
+        lcd.clear();
+        selected = true;
+        clickedS = false;
+        clickable = false;
+        delayL = (millis() + 1000);
+        delayed = false;
+      }
+
+      if (leftClick && rightClick)
+      {
+        if (!clickedL && !clickedR)
+          last = millis();
+        clickedL = true;
+        clickedR = true;
+      }
+      else if ((millis() - last) >= 2000 && clickedL && clickedR)
+      {
+        if (amt > nowV)
+        {
+          for (int i = nowV; i < 6 - 1; i++)
+          {
+            for (int j = 0; j < 4; j++)
+              alarmTime[i][j] = alarmTime[i + 1][j];
+            for (int j = 0; j < 8; j++)
+              alarmDays[i][j] = alarmDays[i + 1][j];
+          }
+          for (int j = 0; j < 4; j++)
+            alarmTime[amt - 1][j] = 0;
+          for (int j = 0; j < 8; j++)
+            alarmDays[amt - 1][j] = 0;
+
+          amt--;
+          lcd.clear();
+          save();
+          clickable = false;
+          delayL = (millis() + 1000);
+          delayed = false;
+        }
+        clickedL = false;
+        clickedR = false;
+      }
+      else if (leftClick)
+        clickedL = true;
+      else if (rightClick)
+        clickedR = true;
+      else if (clickedL)
+      {
+        if (nowV < amt && nowV < 5)
+          nowV++;
+        lcd.clear();
+        clickedL = false;
+      }
+      else if (clickedR)
+      {
+        if (nowV > 0)
+          nowV--;
+        lcd.clear();
+        clickedR = false;
       }
     }
     else
     {
+      if (delayed)
+        clickable = true;
+
       lcd.setCursor(0, 0);
-      lcd.print(fortt(alarmTime[nowV][0]) + ":" + fortt(alarmTime[nowV][1]) + " " + tes(0) + tes(1) + tes(2) + tes(3) + tes(4) + tes(5) + tes(6));
+      lcd.print(adapt(alarmTime[nowV][0]) + ":" + adapt(alarmTime[nowV][1]) + " " +
+                adaptDays(nowV, 0) + adaptDays(nowV, 1) + adaptDays(nowV, 2) + adaptDays(nowV, 3) + adaptDays(nowV, 4) + adaptDays(nowV, 5) + adaptDays(nowV, 6));
       lcd.setCursor(nowH, 1);
-      if (chosenTime)
-      {
-        if ((nowH >= 0 && nowH <= 1) || (nowH >= 3 && nowH <= 4))
-        {
-          lcd.printByte(0);
-          lcd.setCursor(nowH + 1, 1);
-          lcd.printByte(0);
-        }
-        else if (nowH >= 6)
-          lcd.printByte(0);
-        lcd.setCursor(15, 0);
-        lcd.printByte(1);
-        lcd.setCursor(15, 1);
-        lcd.printByte(2);
 
-        if (leftClick)
-          clickedL = true;
-        else if (clickedL)
-        {
-
-          if (nowH >= 0 && nowH <= 1)
-            alarmTime[nowV][0]++;
-          if (nowH >= 3 && nowH <= 4)
-            alarmTime[nowV][1]++;
-          clickedL = false;
-        }
-
-        if (rightClick)
-          clickedR = true;
-        else if (clickedR)
-        {
-          Serial.println("2");
-          if (nowH >= 0 && nowH <= 1)
-            alarmTime[nowV][0]--;
-          if (nowH >= 3 && nowH <= 4)
-            alarmTime[nowV][1]--;
-          clickedR = false;
-        }
-      }
-      else if (chosenDate)
-      {
-        if ((nowH >= 0 && nowH <= 1) || (nowH >= 3 && nowH <= 4))
-        {
-          lcd.printByte(0);
-          lcd.setCursor(nowH + 1, 1);
-          lcd.printByte(0);
-        }
-        else if (nowH >= 6)
-          lcd.printByte(0);
-      }
-      else
+      if (!chosenDate && !chosenTime)
       {
         if ((nowH >= 0 && nowH <= 1) || (nowH >= 3 && nowH <= 4))
           lcd.print("^^");
         else if (nowH >= 6)
           lcd.print("^");
         lcd.setCursor(14, 1);
-        lcd.print("<>");
+        lcd.printByte(3);
+        lcd.setCursor(15, 1);
+        lcd.printByte(4);
 
         if (leftClick)
           clickedL = true;
@@ -292,7 +366,21 @@ void clock()
         }
 
         if (selectClick)
+        {
+          if (!clickedS)
+            last = millis();
           clickedS = true;
+        }
+        else if ((millis() - last) >= 2000 && clickedS)
+        {
+          lcd.clear();
+          nowH = 0;
+          selected = false;
+          clickedS = false;
+          clickable = false;
+          delayL = (millis() + 1000);
+          delayed = false;
+        }
         else if (clickedS)
         {
           if (nowH >= 0 && nowH <= 4)
@@ -303,63 +391,260 @@ void clock()
           clickedS = false;
         }
       }
+      if (chosenTime)
+      {
+        lcd.printByte(0);
+        lcd.setCursor(nowH + 1, 1);
+        lcd.printByte(0);
+        lcd.setCursor(15, 0);
+        lcd.printByte(1);
+        lcd.setCursor(15, 1);
+        lcd.printByte(2);
+
+        if (leftClick)
+          clickedL = true;
+        else if (clickedL)
+        {
+          if (nowH >= 0 && nowH <= 1 && alarmTime[nowV][0] < 24.0f)
+            alarmTime[nowV][0]++;
+          else if (nowH >= 3 && nowH <= 4 && alarmTime[nowV][1] < 60.0f)
+            alarmTime[nowV][1] += 5.0f;
+          save();
+          clickedL = false;
+        }
+
+        if (rightClick)
+          clickedR = true;
+        else if (clickedR)
+        {
+          if (nowH >= 0 && nowH <= 1 && alarmTime[nowV][0] > 0.0f)
+            alarmTime[nowV][0]--;
+          else if (nowH >= 3 && nowH <= 4 && alarmTime[nowV][1] > 0.0f)
+            alarmTime[nowV][1] -= 5.0f;
+          save();
+          clickedR = false;
+        }
+
+        if (selectClick)
+          clickedS = true;
+        else if (clickedS)
+        {
+          chosenTime = false;
+          save();
+          lcd.clear();
+          clickedS = false;
+        }
+      }
+      if (chosenDate)
+      {
+        lcd.printByte(0);
+
+        if (leftClick)
+          clickedL = true;
+        else if (clickedL)
+        {
+          alarmDays[nowV][nowH - 6] = true;
+          save();
+          clickedL = false;
+        }
+
+        if (rightClick)
+          clickedR = true;
+        else if (clickedR)
+        {
+          alarmDays[nowV][nowH - 6] = false;
+          save();
+          clickedR = false;
+        }
+
+        if (selectClick)
+          clickedS = true;
+        else if (clickedS)
+        {
+          chosenDate = false;
+          save();
+          lcd.clear();
+          clickedS = false;
+        }
+      }
     }
+  }
+  delay(10);
+}
+
+char data[BUFSIZE];
+void printArray(const byte *ptr, int len)
+{
+  Serial.print("[");
+  for (int i = 0; i < len - 1; i++)
+  {
+    Serial.print(*(ptr + i), DEC);
+    Serial.print(", ");
+  }
+  Serial.print(*(ptr + len - 1), DEC);
+  Serial.println("]");
+}
+
+void save()
+{
+  data[0] = amt;
+  int now = 1;
+  for (int i = 0; i < 6; i++)
+  {
+    data[now] = alarmTime[i][0];
+    now++;
+    data[now] = alarmTime[i][1];
+    now++;
+  }
+  for (int i = 0; i < 6; i++)
+  {
+    data[now] = alarmDays[i][0];
+    now++;
+    data[now] = putDays(alarmDays[i][1], alarmDays[i][2], alarmDays[i][3]);
+    now++;
+    data[now] = putDays(alarmDays[i][4], alarmDays[i][5], alarmDays[i][6]);
+    now++;
+  }
+  Serial.println("Setting new data to RAM:");
+  printArray(data, BUFSIZE);
+  rtc.putram(data, BUFSIZE);
+}
+byte putDays(bool b1, bool b2, bool b3)
+{
+  byte by = 0;
+  if (b1 && !b2 && !b3)
+    by = 1;
+  if (!b1 && b2 && !b3)
+    by = 2;
+  if (!b1 && !b2 && b3)
+    by = 3;
+  if (b1 && b2 && !b3)
+    by = 4;
+  if (!b1 && b2 && b3)
+    by = 5;
+  if (b1 && !b2 && b3)
+    by = 6;
+  if (b1 && b2 && b3)
+    by = 7;
+  if (!b1 && !b2 && !b3)
+    by = 8;
+  return by;
+}
+
+void load()
+{
+  Serial.println("Previous data in RAM:");
+  rtc.getram(data, BUFSIZE);
+  printArray(data, BUFSIZE);
+  amt = data[0];
+  int now = 1;
+  for (int i = 0; i < 6; i++)
+  {
+    alarmTime[i][0] = data[now];
+    now++;
+    alarmTime[i][1] = data[now];
+    now++;
+  }
+  for (int i = 0; i < 6; i++)
+  {
+    alarmDays[i][0] = data[now];
+    now++;
+    getDays(data[now], i, 1, 2, 3);
+    now++;
+    getDays(data[now], i, 4, 5, 6);
+    now++;
+  }
+}
+void getDays(byte by, int i, int i1, int i2, int i3)
+{
+  switch (by)
+  {
+  case 1:
+    alarmDays[i][i1] = true;
+    alarmDays[i][i2] = false;
+    alarmDays[i][i3] = false;
+    break;
+  case 2:
+    alarmDays[i][i1] = false;
+    alarmDays[i][i2] = true;
+    alarmDays[i][i3] = false;
+    break;
+  case 3:
+    alarmDays[i][i1] = false;
+    alarmDays[i][i2] = false;
+    alarmDays[i][i3] = true;
+    break;
+  case 4:
+    alarmDays[i][i1] = true;
+    alarmDays[i][i2] = true;
+    alarmDays[i][i3] = false;
+    break;
+  case 5:
+    alarmDays[i][i1] = false;
+    alarmDays[i][i2] = true;
+    alarmDays[i][i3] = true;
+    break;
+  case 6:
+    alarmDays[i][i1] = true;
+    alarmDays[i][i2] = false;
+    alarmDays[i][i3] = true;
+    break;
+  case 7:
+    alarmDays[i][i1] = true;
+    alarmDays[i][i2] = true;
+    alarmDays[i][i3] = true;
+    break;
+  case 8:
+    alarmDays[i][i1] = false;
+    alarmDays[i][i2] = false;
+    alarmDays[i][i3] = false;
+    break;
   }
 }
 
-String fortt(int i)
-{
-  String s;
-  if (i < 10 && i >= 0)
-    s = "0" + String(i);
-  else
-    s = String(i);
-  return s;
-}
-
-String tes(int i)
+String adaptDays(int day, int i)
 {
   String s;
   switch (i)
   {
   case 0:
-    if (alarmDays[nowV][i])
+    if (alarmDays[day][i])
       s = "P";
     else
       s = "p";
     break;
   case 1:
-    if (alarmDays[nowV][i])
+    if (alarmDays[day][i])
       s = "W";
     else
       s = "w";
     break;
   case 2:
-    if (alarmDays[nowV][i])
+    if (alarmDays[day][i])
       s = "S";
     else
       s = "s";
     break;
   case 3:
-    if (alarmDays[nowV][i])
+    if (alarmDays[day][i])
       s = "C";
     else
       s = "c";
     break;
   case 4:
-    if (alarmDays[nowV][i])
+    if (alarmDays[day][i])
       s = "P";
     else
       s = "p";
     break;
   case 5:
-    if (alarmDays[nowV][i])
+    if (alarmDays[day][i])
       s = "S";
     else
       s = "s";
     break;
   case 6:
-    if (alarmDays[nowV][i])
+    if (alarmDays[day][i])
       s = "N";
     else
       s = "n";
@@ -369,13 +654,13 @@ String tes(int i)
   return s;
 }
 
-boolean endGame = false;
+bool endGame = false;
 long time[4];
 long timer[3];
 int points = 0;
 int position[3];
 int lives = 3;
-boolean fired = false;
+bool fired = false;
 int jump = 0;
 int high[2] = {1, 1};
 int op = 0;
@@ -628,9 +913,6 @@ void game()
       lcd.print("00:00:00");
       lcd.setCursor(14, 0);
       lcd.print((String) char(223) + "C");
-      // h = 0;
-      // min = 0;
-      // sec = 0;
     }
   }
 }
