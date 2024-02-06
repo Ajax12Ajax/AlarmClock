@@ -81,7 +81,7 @@ void setup()
   lcd.print((String) char(223) + "C");
   rtc.begin();
   load();
-  //rtc.adjust(DateTime(__DATE__, __TIME__));
+  // rtc.adjust(DateTime(__DATE__, __TIME__));
 }
 
 void loop()
@@ -119,7 +119,7 @@ bool chosenDate = false;
 long lastSec;
 long last;
 long lastMil;
-int timer =0;
+int timerSec = 0;
 int amt = 0;
 int nowV = 0;
 int nowH = 0;
@@ -141,7 +141,7 @@ int zellersCongruence(int day, int month, int year)
 
 void clock()
 {
-  if (!settings && !alarm)
+  if (!settings)
   {
     DateTime now = rtc.now();
     if (lastSec != now.second())
@@ -161,123 +161,132 @@ void clock()
 
       temp = (analogRead(sensor) * 5.0) / 1024.0 * 100.0;
       lcd.setCursor(12, 0);
-      lcd.print(temp); 
+      lcd.print(temp);
 
       lcd.setCursor(0, 1);
       lcd.print((String)now.day() + "/" + now.month() + "/" + now.year());
-    }
-if (!alarm) {
-    for (int i = 0; amt > i; i++)
-    {
-      bool today = false;
-      Serial.println("--------------");
-      Serial.println(i);
-      Serial.print("day: ");
-      Serial.println(zellersCongruence(now.day(), now.month(), now.year()));
-      if (alarmDays[i][zellersCongruence(now.day(), now.month(), now.year())])
+
+      if (!alarm)
       {
-        today = true;
-        Serial.println("pland");
-      }
-      else
-      {
-        today = true;
-        for (int t = 0; 7 > t; t++)
+        for (int i = 0; amt > i; i++)
         {
-          if (alarmDays[i][t])
+          bool today = false;
+          Serial.println("--------------");
+          Serial.println(i);
+          Serial.print("day: ");
+          Serial.println(zellersCongruence(now.day(), now.month(), now.year()));
+          if (alarmDays[i][zellersCongruence(now.day(), now.month(), now.year())])
           {
-            today = false;
+            today = true;
+            Serial.println("pland");
+          }
+          else
+          {
+            today = true;
+            for (int t = 0; 7 > t; t++)
+            {
+              if (alarmDays[i][t])
+              {
+                today = false;
+              }
+            }
+          }
+          Serial.print("today: ");
+          Serial.println(today);
+          Serial.print("Time: ");
+          Serial.print(alarmTime[i][0]);
+          Serial.print(":");
+          Serial.println(alarmTime[i][1]);
+          if (today && alarmTime[i][0] == now.hour() && alarmTime[i][1] == now.minute())
+          {
+            alarm = true;
+            alarmed = true;
+            Serial.println("Ring!!!!!");
           }
         }
       }
-      Serial.print("today: ");
-      Serial.println(today);
-      Serial.print("Time: ");
-      Serial.print(alarmTime[i][0]);
-      Serial.print(":");
-      Serial.println(alarmTime[i][1]);
-      if (today && alarmTime[i][0] == now.hour() && alarmTime[i][1] == now.minute())
-      {
-alarm = true;
-        Serial.println("Ring!!!!!");
-
-      }
-    } else { 
-timer++;
-if (timer >= 600) {
-alarm = false;
-noTone(buzzer);
-
-}
-
-}
-
-
-    if (selectClick)
-
-
-
-    {
-      if (!clickedS)
-        last = millis();
-      clickedS = true;
-    }
-    else if ((millis() - last) >= 2000 && clickedS)
-    {
-      lcd.clear();
-      settings = true;
-      clickedS = false;
-      clickable = false;
-      delayL = (millis() + 1000);
-      delayed = false;
-    }
-    else if (clickedS)
-    {
-      if (backlight)
-      {
-        lcd.noBacklight();
-        backlight = false;
-      }
       else
       {
-        lcd.backlight();
-        backlight = true;
+        timerSec++;
+        if (timerSec >= 600)
+        {
+          alarm = false;
+          lcd.setCursor(12, 1);
+          lcd.print("    ");
+          noTone(buzzer);
+        }
       }
-      clickedS = false;
     }
 
-    if (rightClick)
-      jumpStarted = true;
-
-    if (leftClick)
-      spaceWarriorStarted = true;
-} else {
-
-if (millis() >= lastMil) {
-lastMil = millis() +500;
- tone(buzzer, 400, 400);
-if (!visbale) {
-lcd.setCursor(11, 1);
-      lcd.print("!!!!");
-visable = true;
-} else {
-lcd.setCursor(11, 1);
-      lcd.print("    ");
-visable = false;
-}
-}
-if (selectClick)
-          clickedS = true;
-        else if (clickedS)
+    if (!alarm)
+    {
+      if (selectClick)
+      {
+        if (!clickedS)
+          last = millis();
+        clickedS = true;
+      }
+      else if ((millis() - last) >= 2000 && clickedS)
+      {
+        lcd.clear();
+        settings = true;
+        clickedS = false;
+        clickable = false;
+        delayL = (millis() + 1000);
+        delayed = false;
+      }
+      else if (clickedS)
+      {
+        if (backlight)
         {
-
-          alarm = false;
-noTone(buzzer);
-          lcd.setCursor(11, 1);
-      lcd.print("    ");
-          clickedS = false;
+          lcd.noBacklight();
+          backlight = false;
         }
-}
+        else
+        {
+          lcd.backlight();
+          backlight = true;
+        }
+        clickedS = false;
+      }
+
+      if (rightClick)
+        jumpStarted = true;
+
+      if (leftClick)
+        spaceWarriorStarted = true;
+    }
+    else
+    {
+      if (millis() >= lastMil)
+      {
+        lastMil = millis() + 500;
+        tone(buzzer, 400, 400);
+        if (!visable)
+        {
+          lcd.setCursor(12, 1);
+          lcd.print("!!!!");
+          visable = true;
+        }
+        else
+        {
+          lcd.setCursor(12, 1);
+          lcd.print("    ");
+          visable = false;
+        }
+      }
+
+      if (selectClick)
+        clickedS = true;
+      else if (clickedS)
+      {
+        alarm = false;
+        noTone(buzzer);
+        lcd.setCursor(12, 1);
+        lcd.print("    ");
+        clickedS = false;
+      }
+    }
   }
   else if (settings)
   {
@@ -554,8 +563,9 @@ noTone(buzzer);
         }
       }
     }
-  } else if (alarm) {
-
+  }
+  else if (alarm)
+  {
   }
   delay(10);
 }
