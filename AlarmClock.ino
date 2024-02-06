@@ -168,44 +168,43 @@ void clock()
 
       if (!alarm)
       {
+        timerSec = 0;
         for (int i = 0; amt > i; i++)
         {
           bool today = false;
           bool without = false;
-          Serial.println("--------------");
-          Serial.println(i);
-          Serial.print("day: ");
-          Serial.println(zellersCongruence(now.day(), now.month(), now.year()));
           if (alarmDays[i][zellersCongruence(now.day(), now.month(), now.year())])
           {
             today = true;
-            Serial.println("pland");
           }
           else
           {
             without = true;
             today = true;
             for (int t = 0; 7 > t; t++)
-            {
               if (alarmDays[i][t])
               {
                 without = false;
                 today = false;
               }
-            }
           }
-          Serial.print("today: ");
-          Serial.println(today);
-          Serial.print("Time: ");
-          Serial.print(alarmTime[i][0]);
-          Serial.print(":");
-          Serial.println(alarmTime[i][1]);
           if (today && alarmTime[i][0] == now.hour() && alarmTime[i][1] == now.minute())
           {
             if (!alarmed)
               alarm = true;
             alarmed = true;
-            Serial.println("Ring!!!!!");
+
+            Serial.print("Alarm: ");
+            Serial.print(i);
+            Serial.print(" without: ");
+            Serial.print(without);
+            Serial.print(" time: ");
+            Serial.print(alarmTime[i][0]);
+            Serial.print(":");
+            Serial.print(alarmTime[i][1]);
+            Serial.print(" day: ");
+            Serial.println(zellersCongruence(now.day(), now.month(), now.year()));
+
             if (without)
             {
               for (int t = i; t < 6 - 1; t++)
@@ -222,6 +221,8 @@ void clock()
               amt--;
               save();
             }
+            lcd.backlight();
+            backlight = true;
           }
           else
           {
@@ -232,7 +233,7 @@ void clock()
       else
       {
         timerSec++;
-        if (timerSec >= 600)
+        if (timerSec >= 420)
         {
           alarm = false;
           lcd.setCursor(12, 1);
