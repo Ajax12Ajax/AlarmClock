@@ -118,9 +118,13 @@ bool chosenTime = false;
 bool chosenDate = false;
 long lastSec;
 long last;
+long lastMil;
+int timer =0;
 int amt = 0;
 int nowV = 0;
 int nowH = 0;
+bool visable = false;
+bool alarmed = false;
 
 int zellersCongruence(int day, int month, int year)
 {
@@ -157,12 +161,12 @@ void clock()
 
       temp = (analogRead(sensor) * 5.0) / 1024.0 * 100.0;
       lcd.setCursor(12, 0);
-      lcd.print(temp);
+      lcd.print(temp); 
 
       lcd.setCursor(0, 1);
       lcd.print((String)now.day() + "/" + now.month() + "/" + now.year());
     }
-
+if (!alarm) {
     for (int i = 0; amt > i; i++)
     {
       bool today = false;
@@ -194,13 +198,25 @@ void clock()
       Serial.println(alarmTime[i][1]);
       if (today && alarmTime[i][0] == now.hour() && alarmTime[i][1] == now.minute())
       {
+alarm = true;
         Serial.println("Ring!!!!!");
-        tone(buzzer, 400, 400);
-        delay(500);
+
       }
-    }
+    } else { 
+timer++;
+if (timer >= 600) {
+alarm = false;
+noTone(buzzer);
+
+}
+
+}
+
 
     if (selectClick)
+
+
+
     {
       if (!clickedS)
         last = millis();
@@ -235,6 +251,33 @@ void clock()
 
     if (leftClick)
       spaceWarriorStarted = true;
+} else {
+
+if (millis() >= lastMil) {
+lastMil = millis() +500;
+ tone(buzzer, 400, 400);
+if (!visbale) {
+lcd.setCursor(11, 1);
+      lcd.print("!!!!");
+visable = true;
+} else {
+lcd.setCursor(11, 1);
+      lcd.print("    ");
+visable = false;
+}
+}
+if (selectClick)
+          clickedS = true;
+        else if (clickedS)
+        {
+
+          alarm = false;
+noTone(buzzer);
+          lcd.setCursor(11, 1);
+      lcd.print("    ");
+          clickedS = false;
+        }
+}
   }
   else if (settings)
   {
