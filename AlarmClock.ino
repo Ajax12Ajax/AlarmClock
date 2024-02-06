@@ -171,6 +171,7 @@ void clock()
         for (int i = 0; amt > i; i++)
         {
           bool today = false;
+          bool without = false;
           Serial.println("--------------");
           Serial.println(i);
           Serial.print("day: ");
@@ -182,11 +183,13 @@ void clock()
           }
           else
           {
+            without = true;
             today = true;
             for (int t = 0; 7 > t; t++)
             {
               if (alarmDays[i][t])
               {
+                without = false;
                 today = false;
               }
             }
@@ -199,9 +202,30 @@ void clock()
           Serial.println(alarmTime[i][1]);
           if (today && alarmTime[i][0] == now.hour() && alarmTime[i][1] == now.minute())
           {
-            alarm = true;
+            if (!alarmed)
+              alarm = true;
             alarmed = true;
             Serial.println("Ring!!!!!");
+            if (without)
+            {
+              for (int t = i; t < 6 - 1; t++)
+              {
+                for (int j = 0; j < 4; j++)
+                  alarmTime[t][j] = alarmTime[t + 1][j];
+                for (int j = 0; j < 8; j++)
+                  alarmDays[t][j] = alarmDays[t + 1][j];
+              }
+              for (int j = 0; j < 4; j++)
+                alarmTime[amt - 1][j] = 0;
+              for (int j = 0; j < 8; j++)
+                alarmDays[amt - 1][j] = 0;
+              amt--;
+              save();
+            }
+          }
+          else
+          {
+            alarmed = false;
           }
         }
       }
@@ -285,6 +309,9 @@ void clock()
         lcd.setCursor(12, 1);
         lcd.print("    ");
         clickedS = false;
+        clickable = false;
+        delayL = (millis() + 1000);
+        delayed = false;
       }
     }
   }
@@ -381,7 +408,6 @@ void clock()
             alarmTime[amt - 1][j] = 0;
           for (int j = 0; j < 8; j++)
             alarmDays[amt - 1][j] = 0;
-
           amt--;
           lcd.clear();
           save();
