@@ -376,10 +376,7 @@ void clock()
       else if (clickedS)
       {
         if (amt <= nowV)
-        {
           amt++;
-          save();
-        }
         lcd.clear();
         selected = true;
         clickedS = false;
@@ -521,6 +518,7 @@ void clock()
         {
           lcd.clear();
           nowH = 0;
+          save();
           selected = false;
           clickedS = false;
           clickable = false;
@@ -555,7 +553,6 @@ void clock()
             alarmTime[nowV][0]++;
           else if (nowH >= 3 && nowH <= 4 && alarmTime[nowV][1] < 60.0f)
             alarmTime[nowV][1] += 5.0f;
-          save();
           clickedL = false;
         }
 
@@ -567,7 +564,6 @@ void clock()
             alarmTime[nowV][0]--;
           else if (nowH >= 3 && nowH <= 4 && alarmTime[nowV][1] > 0.0f)
             alarmTime[nowV][1] -= 5.0f;
-          save();
           clickedR = false;
         }
 
@@ -576,7 +572,6 @@ void clock()
         else if (clickedS)
         {
           chosenTime = false;
-          save();
           lcd.clear();
           clickedS = false;
         }
@@ -590,7 +585,6 @@ void clock()
         else if (clickedL)
         {
           alarmDays[nowV][nowH - 6] = true;
-          save();
           clickedL = false;
         }
 
@@ -599,7 +593,6 @@ void clock()
         else if (clickedR)
         {
           alarmDays[nowV][nowH - 6] = false;
-          save();
           clickedR = false;
         }
 
@@ -608,7 +601,6 @@ void clock()
         else if (clickedS)
         {
           chosenDate = false;
-          save();
           lcd.clear();
           clickedS = false;
         }
