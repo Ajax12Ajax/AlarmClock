@@ -55,6 +55,8 @@ bool delayed = true;
 float alarmTime[6][4];
 bool alarmDays[6][8];
 
+byte alarmMode[6];
+
 void setup()
 {
   lcd.init();
@@ -81,7 +83,9 @@ void setup()
   lcd.print((String) char(223) + "C");
   rtc.begin();
   load();
-  // rtc.adjust(DateTime(__DATE__, __TIME__));
+  // DateTime dateTimeCurrent = DateTime(__DATE__, __TIME__);
+  // dateTimeCurrent.setsecond(dateTimeCurrent.second() + 11);
+  // rtc.adjust(dateTimeCurrent);
 }
 
 void loop()
@@ -119,25 +123,12 @@ bool chosenDate = false;
 long lastSec;
 long last;
 long lastMil;
+int lastDay;
 int timerSec = 0;
 int amt = 0;
 int nowV = 0;
 int nowH = 0;
 bool visable = false;
-bool alarmed = false;
-
-int zellersCongruence(int day, int month, int year)
-{
-  if (month < 3)
-  {
-    month += 12;
-    year -= 1;
-  }
-  int K = year % 100;
-  int J = year / 100;
-  int h = (day + (13 * (month + 1)) / 5 + K + K / 4 + J / 4 - 2 * J) % 7;
-  return (h + 5) % 7;
-}
 
 void clock()
 {
@@ -173,7 +164,7 @@ void clock()
         {
           bool today = false;
           bool without = false;
-          if (alarmDays[i][zellersCongruence(now.day(), now.month(), now.year())])
+          if (alarmDays[i][now.dayOfWeek() - 1])
           {
             today = true;
           }
@@ -190,9 +181,9 @@ void clock()
           }
           if (today && alarmTime[i][0] == now.hour() && alarmTime[i][1] == now.minute())
           {
-            if (!alarmed)
+            if (alarmMode[i] == 0)
               alarm = true;
-            alarmed = true;
+            alarmMode[i] = 1;
 
             Serial.print("Alarm: ");
             Serial.print(i);
@@ -203,7 +194,7 @@ void clock()
             Serial.print(":");
             Serial.print(alarmTime[i][1]);
             Serial.print(" day: ");
-            Serial.println(zellersCongruence(now.day(), now.month(), now.year()));
+            Serial.println(now.dayOfWeek() - 1);
 
             if (without)
             {
@@ -213,20 +204,18 @@ void clock()
                   alarmTime[t][j] = alarmTime[t + 1][j];
                 for (int j = 0; j < 8; j++)
                   alarmDays[t][j] = alarmDays[t + 1][j];
+                alarmMode[t] = alarmMode[t + 1];
               }
               for (int j = 0; j < 4; j++)
                 alarmTime[amt - 1][j] = 0;
               for (int j = 0; j < 8; j++)
                 alarmDays[amt - 1][j] = 0;
+              alarmMode[amt - 1] = 0;
               amt--;
               save();
             }
             lcd.backlight();
             backlight = true;
-          }
-          else
-          {
-            alarmed = false;
           }
         }
       }
@@ -241,6 +230,13 @@ void clock()
           noTone(buzzer);
         }
       }
+    }
+    if (lastDay != now.day())
+    {
+      Serial.println("refresh");
+      lastDay = now.day();
+      for (int i = 0; i < amt; i++)
+        alarmMode[i] = 0;
     }
 
     if (!alarm)
@@ -340,6 +336,11 @@ void clock()
           lcd.setCursor(0, i);
           lcd.print(adapt(alarmTime[nowV + i][0]) + ":" + adapt(alarmTime[nowV + i][1]) + " " +
                     adaptDays(nowV + i, 0) + adaptDays(nowV + i, 1) + adaptDays(nowV + i, 2) + adaptDays(nowV + i, 3) + adaptDays(nowV + i, 4) + adaptDays(nowV + i, 5) + adaptDays(nowV + i, 6));
+          if (alarmMode[nowV + i] == 2)
+          {
+            lcd.setCursor(13, i);
+            lcd.print("*");
+          }
         }
         else if (amt == nowV + i && amt < 6)
         {
@@ -389,7 +390,7 @@ void clock()
 
       if (leftClick && rightClick)
       {
-        if (!clickedL && !clickedR)
+        if (!clickedL || !clickedR)
           last = millis();
         clickedL = true;
         clickedR = true;
@@ -404,11 +405,13 @@ void clock()
               alarmTime[i][j] = alarmTime[i + 1][j];
             for (int j = 0; j < 8; j++)
               alarmDays[i][j] = alarmDays[i + 1][j];
+            alarmMode[i] = alarmMode[i + 1];
           }
           for (int j = 0; j < 4; j++)
             alarmTime[amt - 1][j] = 0;
           for (int j = 0; j < 8; j++)
             alarmDays[amt - 1][j] = 0;
+          alarmMode[amt - 1] = 0;
           amt--;
           lcd.clear();
           save();
@@ -419,10 +422,31 @@ void clock()
         clickedL = false;
         clickedR = false;
       }
+      else if (clickedL && clickedR)
+      {
+        clickedL = false;
+        clickedR = false;
+      }
       else if (leftClick)
+      {
+        if (!clickedL)
+          last = millis();
         clickedL = true;
+      }
       else if (rightClick)
         clickedR = true;
+      else if ((millis() - last) >= 2000 && clickedL)
+      {
+        if (amt > nowV)
+        {
+          if (alarmMode[nowV] != 2)
+            alarmMode[nowV] = 2;
+          else
+            alarmMode[nowV] = 0;
+        }
+        lcd.clear();
+        clickedL = false;
+      }
       else if (clickedL)
       {
         if (nowV < amt && nowV < 5)
@@ -591,9 +615,6 @@ void clock()
       }
     }
   }
-  else if (alarm)
-  {
-  }
   delay(10);
 }
 
@@ -612,6 +633,14 @@ void printArray(const byte *ptr, int len)
 
 void save()
 {
+  for (int i = 0; i < amt; i++)
+    if (alarmMode[i] == 1)
+      alarmMode[i] = 0;
+  if (amt > 6 || amt < 0)
+  {
+    amt = 6;
+    Serial.println("fixed");
+  }
   data[0] = amt;
   int now = 1;
   for (int i = 0; i < 6; i++)
@@ -662,6 +691,11 @@ void load()
   rtc.getram(data, BUFSIZE);
   printArray(data, BUFSIZE);
   amt = data[0];
+  if (amt > 6 || amt < 0)
+  {
+    amt = 6;
+    Serial.println("fixed");
+  }
   int now = 1;
   for (int i = 0; i < 6; i++)
   {
