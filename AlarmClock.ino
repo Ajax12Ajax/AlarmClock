@@ -24,7 +24,7 @@ bool clockStarted = true;
 int sensor = A3;
 int temp;
 
-int buzzer = 2;
+int buzzer = 3;
 
 bool backlight = true;
 
@@ -90,8 +90,8 @@ void setup()
 
 void loop()
 {
-  int sensorVal1 = digitalRead(9);
-  int sensorVal2 = digitalRead(10);
+  int sensorVal1 = digitalRead(10);
+  int sensorVal2 = digitalRead(9);
   int sensorVal3 = digitalRead(8);
   if (clickable)
   {
@@ -125,7 +125,7 @@ long last;
 long lastMil;
 int lastDay;
 int timerSec = 0;
-int amt = 0;
+byte amt = 0;
 int nowV = 0;
 int nowH = 0;
 bool visable = false;
@@ -683,11 +683,6 @@ void load()
   rtc.getram(data, BUFSIZE);
   printArray(data, BUFSIZE);
   amt = data[0];
-  if (amt > 6 || amt < 0)
-  {
-    amt = 6;
-    Serial.println("fixed");
-  }
   int now = 1;
   for (int i = 0; i < 6; i++)
   {
@@ -704,6 +699,12 @@ void load()
     now++;
     getDays(data[now], i, 4, 5, 6);
     now++;
+  }
+  if (amt > 6 || amt < 0)
+  {
+    amt = 6;
+    Serial.println("fixed");
+    save();
   }
 }
 void getDays(byte by, int i, int i1, int i2, int i3)
