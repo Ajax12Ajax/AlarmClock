@@ -253,6 +253,8 @@ void clock()
         {
           lcd.clear();
           settings = true;
+          lcd.backlight();
+          backlight = true;
           pressed = true;
         }
       }
@@ -866,6 +868,8 @@ void game()
   if (!endGame)
   {
     clockStarted = false;
+    lcd.backlight();
+    backlight = true;
     if (spaceWarriorStarted)
     {
       if (millis() - time[0] >= 400)
