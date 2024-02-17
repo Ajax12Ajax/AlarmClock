@@ -84,6 +84,8 @@ void setup()
   rtc.begin();
   load();
   // DateTime dateTimeCurrent = DateTime(__DATE__, __TIME__);
+  // Serial.print(__TIME__);
+  // Serial.println(__DATE__);
   // dateTimeCurrent.setsecond(dateTimeCurrent.second() + 11);
   // rtc.adjust(dateTimeCurrent);
 }
