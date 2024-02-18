@@ -167,7 +167,9 @@ void clock()
         {
           bool today = false;
           bool without = false;
-          if (alarmDays[i][now.dayOfWeek() - 1])
+          byte weekOfDay = now.dayOfWeek() - 1;
+          if (weekOfDay == -1) weekOfDay = 6;
+          if (alarmDays[i][weekOfDay])
           {
             today = true;
           }
@@ -197,7 +199,7 @@ void clock()
             Serial.print(":");
             Serial.print(alarmTime[i][1]);
             Serial.print(" day: ");
-            Serial.println(now.dayOfWeek() - 1);
+            Serial.println(weekOfDay);
 
             if (without)
             {
