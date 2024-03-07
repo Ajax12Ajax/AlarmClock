@@ -638,9 +638,9 @@ void clock()
           clickedL = true;
         else if (clickedL)
         {
-          if (nowH >= 0 && nowH <= 1 && alarmTime[nowV][0] < 24.0f)
+          if (nowH >= 0 && nowH <= 1 && alarmTime[nowV][0] < 23.0f)
             alarmTime[nowV][0]++;
-          else if (nowH >= 3 && nowH <= 4 && alarmTime[nowV][1] < 60.0f)
+          else if (nowH >= 3 && nowH <= 4 && alarmTime[nowV][1] < 55.0f)
             alarmTime[nowV][1] += 5.0f;
           clickedL = false;
         }
