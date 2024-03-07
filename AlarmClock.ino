@@ -86,7 +86,7 @@ void setup()
   // DateTime dateTimeCurrent = DateTime(__DATE__, __TIME__);
   // Serial.print(__TIME__);
   // Serial.println(__DATE__);
-  // dateTimeCurrent.setsecond(dateTimeCurrent.second() + 11);
+  // dateTimeCurrent.setsecond(dateTimeCurrent.second() + 12);
   // rtc.adjust(dateTimeCurrent);
 }
 
@@ -286,11 +286,53 @@ void clock()
         }
       }
 
-      if (rightClick)
-        jumpStarted = true;
 
-      if (leftClick)
+      if (leftClick && rightClick)
+      {
+        if (!clickedL || !clickedR)
+          last = millis();
+        clickedL = true;
+        clickedR = true;
+        if ((millis() - last) >= 1500 && !pressed)
+        {
+          now.setminute(now.minute() + 1);
+          rtc.adjust(now);
+          pressed = true;
+        }
+      }
+      else if (clickedL && clickedR)
+      {
+        if (pressed)
+        {
+          clickable = false;
+          delayL = (millis() + 1000);
+          delayed = false;
+          clickedL = false;
+          clickedR = false;
+          pressed = false;
+        }
+        else
+        {
+          clickedL = false;
+          clickedR = false;
+        }
+      }
+      else if (leftClick)
+      {
+        clickedL = true;
+      }
+      else if (rightClick)
+        clickedR = true;
+      else if (clickedL)
+      {
         spaceWarriorStarted = true;
+        clickedL = false;
+      }
+      else if (clickedR)
+      {
+        jumpStarted = true;
+        clickedR = false;
+      }
     }
     else
     {
