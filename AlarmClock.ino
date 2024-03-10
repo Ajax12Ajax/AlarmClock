@@ -153,7 +153,7 @@ void clock()
       lcd.setCursor(6, 0);
       lcd.print(adapt(now.second()));
 
-      temp = (analogRead(sensor) * 5.0) / 1024.0 * 100.0;
+      temp = ((analogRead(sensor) * 5.0) / 1024.0 * 100.0) - 3;
       lcd.setCursor(12, 0);
       lcd.print(temp);
 
