@@ -17,6 +17,18 @@ uint8_t arrowDown[8] = {0x0, 0x0, 0x11, 0xa, 0x4, 0x0, 0x0};
 uint8_t arrowLeft[8] = {0x0, 0x2, 0x4, 0x8, 0x4, 0x2, 0x0};
 uint8_t arrowRight[8] = {0x0, 0x8, 0x4, 0x2, 0x4, 0x8, 0x0};
 
+enum modes
+{
+  Clock,
+
+  Clock_Settings,
+
+  Game_Jump,
+  Game_Spacewarrior
+}
+
+modes mode = modes.Clock;
+
 bool spaceWarriorStarted = false;
 bool jumpStarted = false;
 bool clockStarted = true;
@@ -111,10 +123,22 @@ void loop()
   if (delayL <= millis() && delayed == false)
     delayed = true;
 
-  if (clockStarted)
-    clock();
-  if (spaceWarriorStarted || jumpStarted)
-    game();
+    switch (mode) {
+      case Clock:
+        clock();
+        break;
+
+      case Clock_Settings:
+        clockSetting();
+        break;
+
+      case Game_Jump:
+        jump();
+        break;
+      case Game_Spacewarrior:
+        spaceWarrior();
+        break;
+    }
 }
 
 bool alarm = false;
@@ -132,6 +156,15 @@ int nowV = 0;
 int nowH = 0;
 bool visable = false;
 bool pressed = false;
+
+void initClock()
+{
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("00:00:00");
+  lcd.setCursor(14, 0);
+  lcd.print((String) char(223) + "C");
+}
 
 void clock()
 {
