@@ -1,9 +1,9 @@
-# 🕓 Arduino Clock & Alarm  
+# 🕓 AlarmClock  
 
-A **multifunctional Arduino project** that works as:  
-- 🕒 Digital **Clock** with date and temperature  
-- ⏰ Programmable **Alarm** (with weekday scheduling)  
-- 🎮 Mini **Games**: *Jump* & *SpaceWarrior*  
+An **Arduino‑based digital clock** with extra features:  
+🕒 Displays **time, date, and temperature**  
+⏰ Programmable **alarm** with weekday scheduling  
+🎮 Built‑in **mini games**: *Jump* & *SpaceWarrior*  
 
 ## ☑️ Features
 - Real‑time clock with date & time
