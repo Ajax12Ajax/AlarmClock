@@ -1,9 +1,9 @@
 # 🕓 AlarmClock  
 
 An **Arduino‑based digital clock** with extra features:  
-🕒 Displays **time, date, and temperature**  
-⏰ Programmable **alarm** with weekday scheduling  
-🎮 Built‑in **mini games**: *Jump* & *SpaceWarrior*  
+Displays **time, date, and temperature**  
+Programmable **alarm** with weekday scheduling  
+Built‑in **mini games**: *Jump* & *SpaceWarrior*  
 
 ## ☑️ Features
 - Real‑time clock with date & time
